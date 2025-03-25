@@ -21,6 +21,13 @@ https://docs.google.com/document/d/1afLe-ByAAQgjaDozCf2mn5Cu8h-95if3WCew1HMe8g0
 * EF 6.x
 * EF Core
 * C#
+* Blazor
+* SignalR
+* LINQ
+* WPF
+* WCF
+* Web Services
+* Azure Functions and App Services integration
 * SQL Server
 * T-SQL
 * ADO.NET
@@ -51,7 +58,39 @@ https://docs.google.com/document/d/1afLe-ByAAQgjaDozCf2mn5Cu8h-95if3WCew1HMe8g0
 * AWS
 * Search Engine
 * Email Knowledge Management System Since 2004
-* Tools: ShareX, Sourcetree, Postulate Zinger, Beyond Compare, Baretail, ZZZ Projects's Find and Replace (FNR), POCO Generator, EzDbCodeGen, Starter Kit, Github Pages Template, Boilerplate Template, HTML5 Boilerplate, HTML5 UP! Responsive HTML5 and CSS3 Site Templates, ASP.NET Boilerplate, Clean Architecture Solution Template, Umbraco, Codemaid, PoorMansTSqlFormatter, ICsharpCode Code Converter (ICSharpCode.CodeConverter), SharpDevelop Code Converter, Fortify Static Code Analyzer (SCA), Fortify Software Security Center (SSC), Wireshark, Firebug, Fiddler, Burp Suite, OWASP Zed Attack Proxy (ZAP)
+
+# Tools, Libraries & Frameworks
+* ShareX
+* Sourcetree
+* Postulate Zinger
+* Beyond Compare
+* Baretail
+* ZZZ Projects's Find and Replace (FNR)
+* POCO Generator
+* EzDbCodeGen
+* DbUp
+* Starter Kit
+* Github Pages Template
+* Boilerplate Template
+* HTML5 Boilerplate
+* HTML5 UP! Responsive HTML5 and CSS3 Site Templates
+* ASP.NET Boilerplate
+* Clean Architecture Solution Template
+* Umbraco
+* Codemaid
+* PoorMansTSqlFormatter
+* ICsharpCode Code Converter (ICSharpCode.CodeConverter)
+* SharpDevelop Code Converter
+* Fortify Static Code Analyzer (SCA)
+* Fortify Software Security Center (SSC)
+* Wireshark
+* Firebug
+* Fiddler
+* Burp Suite
+* OWASP Zed Attack Proxy (ZAP)
+* Source Generators in C#
+* Free AI Code Generation
+* Free AI-Powered .NET Code Generator: Build Enterprise-Ready Apps Fast
 
 ## Boilerplate List
 * [Boilerplate List](https://boilerplatelist.com)
