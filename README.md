@@ -51,4 +51,4 @@ https://docs.google.com/document/d/1afLe-ByAAQgjaDozCf2mn5Cu8h-95if3WCew1HMe8g0
 * AWS
 * Search Engine
 * Email Knowledge Management System Since 2004
-* Tools: ShareX, Sourcetree, Postulate Zinger, Beyond Compare, Baretail, ZZZ Projects's Find and Replace (FNR), POCO Generator, Wireshark, Firebug, Fiddler, Burp Suite, OWASP Zed Attack Proxy (ZAP)
+* Tools: ShareX, Sourcetree, Postulate Zinger, Beyond Compare, Baretail, ZZZ Projects's Find and Replace (FNR), POCO Generator, EzDbCodeGen, Starter Kit, Boilerplate Template, HTML5 Boilerplate, ASP.NET Boilerplate, ICsharpCode Code Converter (ICSharpCode.CodeConverter), SharpDevelop Code Converter, Fortify Static Code Analyzer (SCA), Fortify Software Security Center (SSC), Wireshark, Firebug, Fiddler, Burp Suite, OWASP Zed Attack Proxy (ZAP)
