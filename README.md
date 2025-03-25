@@ -156,3 +156,149 @@ A .NET scaffolding tool to help you stop worrying about boilerplate and focus on
 * https://www.youtube.com/watch?v=rcRPvOh-q_8
 * https://github.com/benjaminsqlserver/MuyikRecipeManagement
 * https://github.com/gtechsltn/MuyikRecipeManagement
+
+# File Path To Long
+
+If you need filename management with GUIDs while keeping track of files (e.g., saving, retrieving, deleting, or mapping GUIDs to original names), you can create a FileManager class.
+
+
+## Perhaps we should have used GUID for filename
+
+Using a GUID for filenames is a great way to ensure uniqueness and avoid long file path issues. Here's how you can generate a GUID-based filename in C#:
+
+```
+using System;
+using System.IO;
+
+class Program
+{
+    static void Main()
+    {
+        string folderPath = @"C:\MyLongPathFolder";
+        
+        // Ensure the directory exists
+        Directory.CreateDirectory(folderPath);
+
+        // Generate a unique filename using GUID
+        string fileName = $"{Guid.NewGuid()}.txt";
+        string filePath = Path.Combine(folderPath, fileName);
+
+        try
+        {
+            // Write content to the file
+            File.WriteAllText(filePath, "This is a test file with a GUID-based filename.");
+            Console.WriteLine($"File created successfully: {filePath}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+}
+```
+
+## 📌 File Management with GUID-based Filenames
+* This example demonstrates:
+* ✔️ Generating GUID filenames
+* ✔️ Mapping GUIDs to original filenames
+* ✔️ Saving, retrieving, and deleting files
+
+### Create a FileManager Class
+```
+using System;
+using System.Collections.Generic;
+using System.IO;
+
+class FileManager
+{
+    private readonly string storagePath;
+    private readonly Dictionary<string, string> fileMapping; // Maps GUID to original filename
+
+    public FileManager(string path)
+    {
+        storagePath = path;
+        Directory.CreateDirectory(storagePath); // Ensure storage folder exists
+        fileMapping = new Dictionary<string, string>();
+    }
+
+    // Save a file with a GUID-based filename
+    public string SaveFile(string originalFileName, string content)
+    {
+        string guid = Guid.NewGuid().ToString();
+        string fileExtension = Path.GetExtension(originalFileName);
+        string newFileName = $"{guid}{fileExtension}";
+        string filePath = Path.Combine(storagePath, newFileName);
+
+        File.WriteAllText(filePath, content);
+        fileMapping[guid] = originalFileName; // Store mapping
+
+        Console.WriteLine($"File saved: {originalFileName} -> {newFileName}");
+        return guid; // Return GUID to reference the file later
+    }
+
+    // Retrieve the original filename from GUID
+    public string GetOriginalFileName(string guid)
+    {
+        return fileMapping.TryGetValue(guid, out string originalFileName) ? originalFileName : null;
+    }
+
+    // Retrieve file content
+    public string ReadFile(string guid)
+    {
+        string fileName = $"{guid}.txt"; // Assuming .txt, can extend for other types
+        string filePath = Path.Combine(storagePath, fileName);
+
+        return File.Exists(filePath) ? File.ReadAllText(filePath) : null;
+    }
+
+    // Delete file by GUID
+    public bool DeleteFile(string guid)
+    {
+        string fileName = $"{guid}.txt"; // Assuming .txt, adjust as needed
+        string filePath = Path.Combine(storagePath, fileName);
+
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+            fileMapping.Remove(guid);
+            Console.WriteLine($"File deleted: {fileName}");
+            return true;
+        }
+        return false;
+    }
+}
+```
+### Usage Example
+```
+class Program
+{
+    static void Main()
+    {
+        string folderPath = @"C:\FileStorage";
+        FileManager fileManager = new FileManager(folderPath);
+
+        // Save a file
+        string guid = fileManager.SaveFile("Report.pdf", "This is a sample file content.");
+
+        // Retrieve the original filename
+        string originalFileName = fileManager.GetOriginalFileName(guid);
+        Console.WriteLine($"Original Filename: {originalFileName}");
+
+        // Read file content
+        string content = fileManager.ReadFile(guid);
+        Console.WriteLine($"File Content: {content}");
+
+        // Delete file
+        fileManager.DeleteFile(guid);
+    }
+}
+```
+
+## 📌 Benefits of This Approach
+* ✅ Shorter Paths – Avoids long filenames.
+* ✅ File Tracking – Keeps a mapping of GUIDs to original filenames.
+* ✅ Security – Prevents predictable filenames.
+* ✅ Scalable – Can be used in cloud storage or databases.
+
+Would you like me to extend this with database storage for mappings? 🚀
+
