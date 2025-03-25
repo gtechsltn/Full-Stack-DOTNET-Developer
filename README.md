@@ -2,6 +2,8 @@
 
 https://docs.google.com/document/d/1i8nRo7XrtgP86mnXO9Zw2s5JHBZ_ZMoBllSy_QZR15o
 
+https://docs.google.com/document/d/1afLe-ByAAQgjaDozCf2mn5Cu8h-95if3WCew1HMe8g0
+
 * Windows 11
 * Windows Server 2022
 * Visual Studio 2022
@@ -40,9 +42,13 @@ https://docs.google.com/document/d/1i8nRo7XrtgP86mnXO9Zw2s5JHBZ_ZMoBllSy_QZR15o
 * GitHub
 * Node.js
 * Java
+* Solr
 * Python
 * Ember.js
 * Chrome
 * Firefox
 * Azure
 * AWS
+* Search Engine
+* Email Knowledge Management System Since 2004
+* Tools: ShareX, Sourcetree, Postulate Zinger, Beyond Compare, Baretail, ZZZ Projects's Find and Replace (FNR), POCO Generator, Wireshark, Firebug, Fiddler, Burp Suite, OWASP Zed Attack Proxy (ZAP)
