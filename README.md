@@ -4,6 +4,10 @@ https://docs.google.com/document/d/1i8nRo7XrtgP86mnXO9Zw2s5JHBZ_ZMoBllSy_QZR15o
 
 https://docs.google.com/document/d/1afLe-ByAAQgjaDozCf2mn5Cu8h-95if3WCew1HMe8g0
 
+# English Special Characters
+https://www.webopedia.com/definitions/special-character/
+
+# Tech Stack
 * Windows 11
 * Windows Server 2022
 * Visual Studio 2022
