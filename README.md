@@ -61,6 +61,7 @@ https://docs.google.com/document/d/1afLe-ByAAQgjaDozCf2mn5Cu8h-95if3WCew1HMe8g0
 
 # Tools, Libraries & Frameworks
 * **Robocopy** (Command Line)
+* [**Image to Text Converter: An online image to text converter to extract text from images**](https://www.imagetotext.info/)
 * ShareX
 * Sourcetree
 * Postulate Zinger
