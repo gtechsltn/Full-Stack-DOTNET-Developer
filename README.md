@@ -1109,10 +1109,12 @@ Admin User (Can Upload & Delete)
 
 Regular User (Can Only Download)
 
+```
 {
   "username": "user",
   "password": "password"
 }
+```
 
 #### Restricted Endpoints
 
