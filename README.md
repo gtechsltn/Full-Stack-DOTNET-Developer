@@ -198,7 +198,9 @@ class Program
 ```
 
 ## 📌 File Management with GUID-based Filenames
-* This example demonstrates:
+
+This example demonstrates:
+ 
 * ✔️ Generating GUID filenames
 * ✔️ Mapping GUIDs to original filenames
 * ✔️ Saving, retrieving, and deleting files
