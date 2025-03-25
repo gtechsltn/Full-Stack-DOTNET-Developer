@@ -54,8 +54,8 @@ https://docs.google.com/document/d/1afLe-ByAAQgjaDozCf2mn5Cu8h-95if3WCew1HMe8g0
 * Tools: ShareX, Sourcetree, Postulate Zinger, Beyond Compare, Baretail, ZZZ Projects's Find and Replace (FNR), POCO Generator, EzDbCodeGen, Starter Kit, Github Pages Template, Boilerplate Template, HTML5 Boilerplate, HTML5 UP! Responsive HTML5 and CSS3 Site Templates, ASP.NET Boilerplate, Clean Architecture Solution Template, Umbraco, Codemaid, PoorMansTSqlFormatter, ICsharpCode Code Converter (ICSharpCode.CodeConverter), SharpDevelop Code Converter, Fortify Static Code Analyzer (SCA), Fortify Software Security Center (SSC), Wireshark, Firebug, Fiddler, Burp Suite, OWASP Zed Attack Proxy (ZAP)
 
 ## Boilerplate List
-https://boilerplatelist.com
-
+* [Boilerplate List](https://boilerplatelist.com)
+* [Top 5 AI SaaS Boilerplates of 2025](https://realtors.medium.com/top-5-ai-saas-boilerplates-of-2025-why-nextboilerplate-reigns-supreme-e7981595c993)
 * [Top 70 Next.js SaaS Boilerplates 2025](https://boilerplatelist.com/collections/top-next-js-saas-boilerplates/)
 * [Best SaaS Boilerplates of 2025](https://slashdot.org/software/saas-boilerplates/)
 
