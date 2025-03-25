@@ -76,6 +76,7 @@ https://docs.google.com/document/d/1afLe-ByAAQgjaDozCf2mn5Cu8h-95if3WCew1HMe8g0
 * HTML5 UP! Responsive HTML5 and CSS3 Site Templates
 * ASP.NET Boilerplate
 * Clean Architecture Solution Template
+* Clean Code for .NET Coding Craftsman
 * Umbraco
 * Codemaid
 * PoorMansTSqlFormatter
@@ -91,6 +92,12 @@ https://docs.google.com/document/d/1afLe-ByAAQgjaDozCf2mn5Cu8h-95if3WCew1HMe8g0
 * Source Generators in C#
 * Free AI Code Generation
 * Free AI-Powered .NET Code Generator: Build Enterprise-Ready Apps Fast
+* OWASP Top 10 Vulnerabilities
+* SOLID
+* OOP
+* Clean Code
+* Unit Testing
+* **pdevito3 craftsman** (Wrapt)
 
 ## Boilerplate List
 * [Boilerplate List](https://boilerplatelist.com)
@@ -104,3 +111,33 @@ https://dev.to/rodik/top-12-battle-tested-react-boilerplates-for-2024-f6i
 
 ## Site build in Umbraco v9 and .NET 5.0
 https://github.com/gtechsltn/UmbracoNineDemoSite
+
+## Clean Code
+* https://medium.com/hackernoon/clean-code-for-net-coding-craftsman-7674373fccaf
+* https://github.com/thangchung/clean-code-dotnet
+
+# Craftsman Scaffolds Your Boilerplate!
+
+A .NET scaffolding tool to help you stop worrying about boilerplate and focus on your business logic 🚀
+
+## 1. Wrapt
+
+Skip the boilerplate and focus on your business logic. 
+
+Scaffold an entire .NET Web API with a simple yaml or json file so you can focus on the high value features in your web app.
+
+* https://wrapt.dev/
+* https://github.com/GrahamDumpleton/wrapt
+* https://wrapt.dev/docs/how-it-works
+
+## 2. Craftsman
+
+A .NET scaffolding tool to help you stop worrying about boilerplate and focus on your business logic 🚀
+
+* https://www.nuget.org/packages/Craftsman
+* https://github.com/pdevito3/craftsman
+ 
+## 3. Source Code For Lesson One Of Creating Dot Net Web Api and Microservices With Craftsman
+* https://www.youtube.com/watch?v=rcRPvOh-q_8
+* https://github.com/benjaminsqlserver/MuyikRecipeManagement
+* https://github.com/gtechsltn/MuyikRecipeManagement
