@@ -60,6 +60,7 @@ https://docs.google.com/document/d/1afLe-ByAAQgjaDozCf2mn5Cu8h-95if3WCew1HMe8g0
 * Email Knowledge Management System Since 2004
 
 # Tools, Libraries & Frameworks
+* **Robocopy** (Command Line)
 * ShareX
 * Sourcetree
 * Postulate Zinger
