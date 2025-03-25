@@ -51,4 +51,16 @@ https://docs.google.com/document/d/1afLe-ByAAQgjaDozCf2mn5Cu8h-95if3WCew1HMe8g0
 * AWS
 * Search Engine
 * Email Knowledge Management System Since 2004
-* Tools: ShareX, Sourcetree, Postulate Zinger, Beyond Compare, Baretail, ZZZ Projects's Find and Replace (FNR), POCO Generator, EzDbCodeGen, Starter Kit, Boilerplate Template, HTML5 Boilerplate, ASP.NET Boilerplate, ICsharpCode Code Converter (ICSharpCode.CodeConverter), SharpDevelop Code Converter, Fortify Static Code Analyzer (SCA), Fortify Software Security Center (SSC), Wireshark, Firebug, Fiddler, Burp Suite, OWASP Zed Attack Proxy (ZAP)
+* Tools: ShareX, Sourcetree, Postulate Zinger, Beyond Compare, Baretail, ZZZ Projects's Find and Replace (FNR), POCO Generator, EzDbCodeGen, Starter Kit, Github Pages Template, Boilerplate Template, HTML5 Boilerplate, HTML5 UP! Responsive HTML5 and CSS3 Site Templates, ASP.NET Boilerplate, Clean Architecture Solution Template, Umbraco, Codemaid, PoorMansTSqlFormatter, ICsharpCode Code Converter (ICSharpCode.CodeConverter), SharpDevelop Code Converter, Fortify Static Code Analyzer (SCA), Fortify Software Security Center (SSC), Wireshark, Firebug, Fiddler, Burp Suite, OWASP Zed Attack Proxy (ZAP)
+
+## Boilerplate List
+https://boilerplatelist.com
+
+* [Top 70 Next.js SaaS Boilerplates 2025](https://boilerplatelist.com/collections/top-next-js-saas-boilerplates/)
+* [Best SaaS Boilerplates of 2025](https://slashdot.org/software/saas-boilerplates/)
+
+## Top 12+ Battle-Tested React Boilerplates for 2024
+https://dev.to/rodik/top-12-battle-tested-react-boilerplates-for-2024-f6i
+
+## Site build in Umbraco v9 and .NET 5.0
+https://github.com/gtechsltn/UmbracoNineDemoSite
