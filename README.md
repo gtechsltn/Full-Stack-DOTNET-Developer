@@ -302,3 +302,653 @@ class Program
 
 Would you like me to extend this with database storage for mappings? 🚀
 
+
+## 📌 File Management with GUID-Based Filenames & Database Storage
+
+This implementation will:
+
+* ✔️ Store file metadata (GUID, original filename, path) in a SQL Server database
+* ✔️ Save, retrieve, and delete files using C# and Dapper
+* ✔️ Ensure efficient file tracking and management
+
+### Database Table: FileStorage
+```
+CREATE TABLE FileStorage (
+    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    OriginalFileName NVARCHAR(255) NOT NULL,
+    StoredFileName NVARCHAR(255) NOT NULL,
+    FilePath NVARCHAR(500) NOT NULL,
+    CreatedAt DATETIME DEFAULT GETDATE()
+);
+```
+
+### Nuget Packages
+```
+Install-Package Dapper
+Install-Package System.Data.SqlClient
+```
+
+### FileManager Class with Database Storage
+
+```
+using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.IO;
+using Dapper;
+
+class FileManager
+{
+    private readonly string storagePath;
+    private readonly string connectionString;
+
+    public FileManager(string storagePath, string connectionString)
+    {
+        this.storagePath = storagePath;
+        this.connectionString = connectionString;
+        Directory.CreateDirectory(storagePath); // Ensure folder exists
+    }
+
+    // Save a file and store metadata in the database
+    public Guid SaveFile(string originalFileName, string content)
+    {
+        Guid fileId = Guid.NewGuid();
+        string fileExtension = Path.GetExtension(originalFileName);
+        string storedFileName = $"{fileId}{fileExtension}";
+        string filePath = Path.Combine(storagePath, storedFileName);
+
+        // Save file to disk
+        File.WriteAllText(filePath, content);
+
+        // Insert metadata into the database
+        using (IDbConnection db = new SqlConnection(connectionString))
+        {
+            string sql = @"INSERT INTO FileStorage (Id, OriginalFileName, StoredFileName, FilePath) 
+                           VALUES (@Id, @OriginalFileName, @StoredFileName, @FilePath)";
+            db.Execute(sql, new { Id = fileId, OriginalFileName = originalFileName, StoredFileName = storedFileName, FilePath = filePath });
+        }
+
+        Console.WriteLine($"File saved: {originalFileName} -> {storedFileName}");
+        return fileId;
+    }
+
+    // Retrieve the original filename from GUID
+    public string GetOriginalFileName(Guid fileId)
+    {
+        using (IDbConnection db = new SqlConnection(connectionString))
+        {
+            string sql = "SELECT OriginalFileName FROM FileStorage WHERE Id = @Id";
+            return db.QueryFirstOrDefault<string>(sql, new { Id = fileId });
+        }
+    }
+
+    // Retrieve file content
+    public string ReadFile(Guid fileId)
+    {
+        using (IDbConnection db = new SqlConnection(connectionString))
+        {
+            string sql = "SELECT FilePath FROM FileStorage WHERE Id = @Id";
+            string filePath = db.QueryFirstOrDefault<string>(sql, new { Id = fileId });
+
+            return File.Exists(filePath) ? File.ReadAllText(filePath) : null;
+        }
+    }
+
+    // Delete file from disk and database
+    public bool DeleteFile(Guid fileId)
+    {
+        using (IDbConnection db = new SqlConnection(connectionString))
+        {
+            // Get file path
+            string sql = "SELECT FilePath FROM FileStorage WHERE Id = @Id";
+            string filePath = db.QueryFirstOrDefault<string>(sql, new { Id = fileId });
+
+            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+            {
+                File.Delete(filePath);
+
+                // Delete from database
+                string deleteSql = "DELETE FROM FileStorage WHERE Id = @Id";
+                db.Execute(deleteSql, new { Id = fileId });
+
+                Console.WriteLine($"File deleted: {filePath}");
+                return true;
+            }
+        }
+        return false;
+    }
+}
+```
+
+### Usage
+```
+class Program
+{
+    static void Main()
+    {
+        string folderPath = @"C:\FileStorage";
+        string connectionString = "Server=YOUR_SERVER;Database=YOUR_DB;User Id=YOUR_USER;Password=YOUR_PASSWORD;";
+
+        FileManager fileManager = new FileManager(folderPath, connectionString);
+
+        // Save a file
+        Guid fileId = fileManager.SaveFile("Report.pdf", "This is a sample file content.");
+
+        // Retrieve original filename
+        string originalFileName = fileManager.GetOriginalFileName(fileId);
+        Console.WriteLine($"Original Filename: {originalFileName}");
+
+        // Read file content
+        string content = fileManager.ReadFile(fileId);
+        Console.WriteLine($"File Content: {content}");
+
+        // Delete file
+        fileManager.DeleteFile(fileId);
+    }
+}
+```
+
+### 📌 Why Use This Approach?
+* ✅ Shorter Paths – Uses GUIDs to avoid long filename issues.
+* ✅ File Tracking – Stores metadata in SQL Server.
+* ✅ Security – Prevents guessing file paths.
+* ✅ Scalability – Works well for large-scale storage.
+
+## 📌 ASP.NET Core Web API for File Management (GUID-Based Filenames & Database Storage)
+
+This API will:
+
+* ✔️ Allow file upload, retrieval, and deletion via endpoints
+* ✔️ Use GUID filenames for uniqueness and to avoid long path issues
+* ✔️ Store metadata in SQL Server using Dapper
+
+```
+Install-Package Dapper
+Install-Package Microsoft.AspNetCore.Http.Features
+Install-Package Microsoft.Data.SqlClient
+```
+
+### Create FileManagerService.cs for File Operations
+```
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
+using System.IO;
+using System.Threading.Tasks;
+using Dapper;
+using Microsoft.AspNetCore.Http;
+
+public class FileManagerService
+{
+    private readonly string _storagePath;
+    private readonly string _connectionString;
+
+    public FileManagerService(string storagePath, string connectionString)
+    {
+        _storagePath = storagePath;
+        _connectionString = connectionString;
+        Directory.CreateDirectory(_storagePath); // Ensure storage folder exists
+    }
+
+    // Upload file
+    public async Task<Guid> SaveFileAsync(IFormFile file)
+    {
+        Guid fileId = Guid.NewGuid();
+        string fileExtension = Path.GetExtension(file.FileName);
+        string storedFileName = $"{fileId}{fileExtension}";
+        string filePath = Path.Combine(_storagePath, storedFileName);
+
+        // Save file to disk
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        // Insert metadata into database
+        using (IDbConnection db = new SqlConnection(_connectionString))
+        {
+            string sql = @"INSERT INTO FileStorage (Id, OriginalFileName, StoredFileName, FilePath) 
+                           VALUES (@Id, @OriginalFileName, @StoredFileName, @FilePath)";
+            db.Execute(sql, new { Id = fileId, OriginalFileName = file.FileName, StoredFileName = storedFileName, FilePath = filePath });
+        }
+
+        return fileId;
+    }
+
+    // Get file metadata
+    public async Task<string> GetOriginalFileNameAsync(Guid fileId)
+    {
+        using (IDbConnection db = new SqlConnection(_connectionString))
+        {
+            string sql = "SELECT OriginalFileName FROM FileStorage WHERE Id = @Id";
+            return await db.QueryFirstOrDefaultAsync<string>(sql, new { Id = fileId });
+        }
+    }
+
+    // Download file
+    public async Task<(string, byte[])> GetFileAsync(Guid fileId)
+    {
+        using (IDbConnection db = new SqlConnection(_connectionString))
+        {
+            string sql = "SELECT OriginalFileName, FilePath FROM FileStorage WHERE Id = @Id";
+            var result = await db.QueryFirstOrDefaultAsync<(string, string)>(sql, new { Id = fileId });
+
+            if (result == default || !File.Exists(result.Item2))
+                return (null, null);
+
+            byte[] fileBytes = await File.ReadAllBytesAsync(result.Item2);
+            return (result.Item1, fileBytes);
+        }
+    }
+
+    // Delete file
+    public async Task<bool> DeleteFileAsync(Guid fileId)
+    {
+        using (IDbConnection db = new SqlConnection(_connectionString))
+        {
+            string sql = "SELECT FilePath FROM FileStorage WHERE Id = @Id";
+            string filePath = await db.QueryFirstOrDefaultAsync<string>(sql, new { Id = fileId });
+
+            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+            {
+                File.Delete(filePath);
+
+                // Delete from database
+                string deleteSql = "DELETE FROM FileStorage WHERE Id = @Id";
+                await db.ExecuteAsync(deleteSql, new { Id = fileId });
+
+                return true;
+            }
+        }
+        return false;
+    }
+}
+```
+
+### Create FileController.cs
+```
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
+[Route("api/files")]
+[ApiController]
+public class FileController : ControllerBase
+{
+    private readonly FileManagerService _fileManagerService;
+
+    public FileController(FileManagerService fileManagerService)
+    {
+        _fileManagerService = fileManagerService;
+    }
+
+    // Upload file
+    [HttpPost("upload")]
+    public async Task<IActionResult> UploadFile([FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("Invalid file.");
+
+        Guid fileId = await _fileManagerService.SaveFileAsync(file);
+        return Ok(new { FileId = fileId });
+    }
+
+    // Download file
+    [HttpGet("download/{fileId}")]
+    public async Task<IActionResult> DownloadFile(Guid fileId)
+    {
+        var (originalFileName, fileBytes) = await _fileManagerService.GetFileAsync(fileId);
+
+        if (fileBytes == null)
+            return NotFound("File not found.");
+
+        return File(fileBytes, "application/octet-stream", originalFileName);
+    }
+
+    // Get file metadata
+    [HttpGet("metadata/{fileId}")]
+    public async Task<IActionResult> GetFileMetadata(Guid fileId)
+    {
+        string originalFileName = await _fileManagerService.GetOriginalFileNameAsync(fileId);
+        if (string.IsNullOrEmpty(originalFileName))
+            return NotFound("File metadata not found.");
+
+        return Ok(new { FileId = fileId, OriginalFileName = originalFileName });
+    }
+
+    // Delete file
+    [HttpDelete("delete/{fileId}")]
+    public async Task<IActionResult> DeleteFile(Guid fileId)
+    {
+        bool deleted = await _fileManagerService.DeleteFileAsync(fileId);
+        if (!deleted)
+            return NotFound("File not found.");
+
+        return Ok("File deleted successfully.");
+    }
+}
+```
+
+### Configure Program.cs
+
+Modify Program.cs to register FileManagerService:
+
+```
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+string storagePath = @"C:\FileStorage";  // Change to your directory
+string connectionString = "Server=YOUR_SERVER;Database=YOUR_DB;User Id=YOUR_USER;Password=YOUR_PASSWORD;";
+
+builder.Services.AddSingleton(new FileManagerService(storagePath, connectionString));
+
+var app = builder.Build();
+
+app.UseSwagger();
+app.UseSwaggerUI();
+app.UseAuthorization();
+app.MapControllers();
+app.Run();
+```
+
+## Test API Endpoints (Using Postman or Swagger)
+### Upload File:
+POST /api/files/upload → Upload a file via form-data.
+
+### Download File:
+GET /api/files/download/{fileId} → Retrieves the file.
+
+### Get File Metadata:
+GET /api/files/metadata/{fileId} → Retrieves original filename.
+
+### Delete File:
+DELETE /api/files/delete/{fileId} → Deletes the file.
+
+## 📌 Why This Approach?
+* ✅ Shorter Paths – Avoids long filename issues.
+* ✅ Efficient File Tracking – Stores metadata in SQL Server.
+* ✅ Security – Prevents guessing file paths.
+* ✅ Scalable – Works well for cloud storage and distributed systems.
+
+## File Encryption or Access Control
+
+📌 File Encryption & Access Control in ASP.NET Core Web API
+This implementation will:
+
+* ✔️ Encrypt & Decrypt Files before saving/retrieving
+* ✔️ Access Control using authentication & authorization
+
+```
+Install-Package System.Security.Cryptography
+Install-Package Microsoft.AspNetCore.Authentication.JwtBearer
+Install-Package Microsoft.AspNetCore.Authorization
+```
+
+### Add Encryption & Decryption
+
+#### Encryption Helper Class
+```
+using System;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
+
+public class EncryptionHelper
+{
+    private readonly byte[] _key;
+    private readonly byte[] _iv;
+
+    public EncryptionHelper(string secretKey)
+    {
+        using (SHA256 sha256 = SHA256.Create())
+        {
+            _key = sha256.ComputeHash(Encoding.UTF8.GetBytes(secretKey));
+            _iv = new byte[16]; // 16-byte IV for AES
+        }
+    }
+
+    public byte[] Encrypt(byte[] data)
+    {
+        using (Aes aes = Aes.Create())
+        {
+            aes.Key = _key;
+            aes.IV = _iv;
+
+            using (MemoryStream ms = new MemoryStream())
+            using (CryptoStream cs = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write))
+            {
+                cs.Write(data, 0, data.Length);
+                cs.FlushFinalBlock();
+                return ms.ToArray();
+            }
+        }
+    }
+
+    public byte[] Decrypt(byte[] encryptedData)
+    {
+        using (Aes aes = Aes.Create())
+        {
+            aes.Key = _key;
+            aes.IV = _iv;
+
+            using (MemoryStream ms = new MemoryStream())
+            using (CryptoStream cs = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Write))
+            {
+                cs.Write(encryptedData, 0, encryptedData.Length);
+                cs.FlushFinalBlock();
+                return ms.ToArray();
+            }
+        }
+    }
+}
+```
+
+### Modify FileManagerService.cs
+```
+public class FileManagerService
+{
+    private readonly string _storagePath;
+    private readonly string _connectionString;
+    private readonly EncryptionHelper _encryptionHelper;
+
+    public FileManagerService(string storagePath, string connectionString, string secretKey)
+    {
+        _storagePath = storagePath;
+        _connectionString = connectionString;
+        _encryptionHelper = new EncryptionHelper(secretKey);
+        Directory.CreateDirectory(_storagePath);
+    }
+
+    // Encrypt & Save File
+    public async Task<Guid> SaveFileAsync(IFormFile file)
+    {
+        Guid fileId = Guid.NewGuid();
+        string fileExtension = Path.GetExtension(file.FileName);
+        string storedFileName = $"{fileId}{fileExtension}";
+        string filePath = Path.Combine(_storagePath, storedFileName);
+
+        using (var memoryStream = new MemoryStream())
+        {
+            await file.CopyToAsync(memoryStream);
+            byte[] encryptedData = _encryptionHelper.Encrypt(memoryStream.ToArray());
+            await File.WriteAllBytesAsync(filePath, encryptedData);
+        }
+
+        using (IDbConnection db = new SqlConnection(_connectionString))
+        {
+            string sql = @"INSERT INTO FileStorage (Id, OriginalFileName, StoredFileName, FilePath) 
+                           VALUES (@Id, @OriginalFileName, @StoredFileName, @FilePath)";
+            db.Execute(sql, new { Id = fileId, OriginalFileName = file.FileName, StoredFileName = storedFileName, FilePath = filePath });
+        }
+
+        return fileId;
+    }
+
+    // Decrypt & Retrieve File
+    public async Task<(string, byte[])> GetFileAsync(Guid fileId)
+    {
+        using (IDbConnection db = new SqlConnection(_connectionString))
+        {
+            string sql = "SELECT OriginalFileName, FilePath FROM FileStorage WHERE Id = @Id";
+            var result = await db.QueryFirstOrDefaultAsync<(string, string)>(sql, new { Id = fileId });
+
+            if (result == default || !File.Exists(result.Item2))
+                return (null, null);
+
+            byte[] encryptedData = await File.ReadAllBytesAsync(result.Item2);
+            byte[] decryptedData = _encryptionHelper.Decrypt(encryptedData);
+            return (result.Item1, decryptedData);
+        }
+    }
+}
+```
+
+## Implement Authentication & Authorization
+
+Modify Program.cs to add JWT-based authentication:
+
+🔑 Configure JWT Authentication
+
+🔑 Store securely in appsettings.json or environment variables
+
+```
+var builder = WebApplication.CreateBuilder(args);
+
+var secretKey = "YourSuperSecretKeyHere";
+string storagePath = @"C:\FileStorage";
+string connectionString = "Server=YOUR_SERVER;Database=YOUR_DB;User Id=YOUR_USER;Password=YOUR_PASSWORD;";
+
+// Register services
+builder.Services.AddSingleton(new FileManagerService(storagePath, connectionString, secretKey));
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.SaveToken = true;
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+            ValidateIssuer = false,
+            ValidateAudience = false
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+var app = builder.Build();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+app.Run();
+```
+
+### Secure API Endpoints
+
+Modify FileController.cs to require authentication.
+
+```
+[Authorize] // 🔒 Require authentication for all endpoints
+[Route("api/files")]
+[ApiController]
+public class FileController : ControllerBase
+{
+    private readonly FileManagerService _fileManagerService;
+
+    public FileController(FileManagerService fileManagerService)
+    {
+        _fileManagerService = fileManagerService;
+    }
+
+    [HttpPost("upload")]
+    public async Task<IActionResult> UploadFile([FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("Invalid file.");
+
+        Guid fileId = await _fileManagerService.SaveFileAsync(file);
+        return Ok(new { FileId = fileId });
+    }
+
+    [HttpGet("download/{fileId}")]
+    public async Task<IActionResult> DownloadFile(Guid fileId)
+    {
+        var (originalFileName, fileBytes) = await _fileManagerService.GetFileAsync(fileId);
+
+        if (fileBytes == null)
+            return NotFound("File not found.");
+
+        return File(fileBytes, "application/octet-stream", originalFileName);
+    }
+
+    [HttpDelete("delete/{fileId}")]
+    public async Task<IActionResult> DeleteFile(Guid fileId)
+    {
+        bool deleted = await _fileManagerService.DeleteFileAsync(fileId);
+        if (!deleted)
+            return NotFound("File not found.");
+
+        return Ok("File deleted successfully.");
+    }
+}
+```
+
+### Generate JWT Tokens for Access
+
+Create a AuthController.cs to issue JWT tokens.
+
+```
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+
+[Route("api/auth")]
+[ApiController]
+public class AuthController : ControllerBase
+{
+    private readonly string _secretKey = "YourSuperSecretKeyHere"; // Store securely
+
+    [HttpPost("login")]
+    public IActionResult Login([FromBody] LoginRequest request)
+    {
+        if (request.Username == "admin" && request.Password == "password") // Replace with real user validation
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_secretKey);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, request.Username) }),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return Ok(new { Token = tokenHandler.WriteToken(token) });
+        }
+        return Unauthorized();
+    }
+}
+
+public class LoginRequest
+{
+    public string Username { get; set; }
+    public string Password { get; set; }
+}
+```
+
+### 📌 Summary
+* ✔ Files are Encrypted Before Storage 🔐
+* ✔ Only Authenticated Users Can Access Files 🔑
+* ✔ Files are Decrypted Only When Retrieved 🔓
+
+## Role-Based Access Control (RBAC) for different user permissions
+```
+```
