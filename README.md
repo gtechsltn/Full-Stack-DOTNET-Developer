@@ -950,5 +950,448 @@ public class LoginRequest
 * ✔ Files are Decrypted Only When Retrieved 🔓
 
 ## Role-Based Access Control (RBAC) for different user permissions
+
+📌 Role-Based Access Control (RBAC) with Admin Role in ASP.NET Core Web API
+
+This implementation will:
+
+* ✔ Use JWT for Authentication 🔑
+* ✔ Implement Role-Based Authorization (Admin vs. Regular Users) 🔒
+* ✔ Restrict File Management Endpoints to Admins Only 🚀
+
+### Modify JWT Token Generation to Include Roles
+
+Update AuthController.cs to include roles in JWT tokens.
+
 ```
+[Route("api/auth")]
+[ApiController]
+public class AuthController : ControllerBase
+{
+    private readonly string _secretKey = "YourSuperSecretKeyHere"; // Store securely
+
+    [HttpPost("login")]
+    public IActionResult Login([FromBody] LoginRequest request)
+    {
+        // Mock user authentication (Replace with real user validation from a database)
+        string userRole = request.Username == "admin" ? "Admin" : "User";
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(_secretKey);
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(new[]
+            {
+                new Claim(ClaimTypes.Name, request.Username),
+                new Claim(ClaimTypes.Role, userRole) // Assign Role
+            }),
+            Expires = DateTime.UtcNow.AddHours(1),
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+        };
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+
+        return Ok(new { Token = tokenHandler.WriteToken(token) });
+    }
+}
+
+public class LoginRequest
+{
+    public string Username { get; set; }
+    public string Password { get; set; }
+}
 ```
+
+### Enforce Role-Based Access in API Endpoints
+
+Modify FileController.cs to restrict file operations to Admins.
+
+```
+[Authorize] // Require authentication for all endpoints
+[Route("api/files")]
+[ApiController]
+public class FileController : ControllerBase
+{
+    private readonly FileManagerService _fileManagerService;
+
+    public FileController(FileManagerService fileManagerService)
+    {
+        _fileManagerService = fileManagerService;
+    }
+
+    [Authorize(Roles = "Admin")] // Only Admins can upload files
+    [HttpPost("upload")]
+    public async Task<IActionResult> UploadFile([FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("Invalid file.");
+
+        Guid fileId = await _fileManagerService.SaveFileAsync(file);
+        return Ok(new { FileId = fileId });
+    }
+
+    [Authorize] // Both Users and Admins can download files
+    [HttpGet("download/{fileId}")]
+    public async Task<IActionResult> DownloadFile(Guid fileId)
+    {
+        var (originalFileName, fileBytes) = await _fileManagerService.GetFileAsync(fileId);
+
+        if (fileBytes == null)
+            return NotFound("File not found.");
+
+        return File(fileBytes, "application/octet-stream", originalFileName);
+    }
+
+    [Authorize(Roles = "Admin")] // Only Admins can delete files
+    [HttpDelete("delete/{fileId}")]
+    public async Task<IActionResult> DeleteFile(Guid fileId)
+    {
+        bool deleted = await _fileManagerService.DeleteFileAsync(fileId);
+        if (!deleted)
+            return NotFound("File not found.");
+
+        return Ok("File deleted successfully.");
+    }
+}
+```
+
+### Update Program.cs to Support Role-Based Authentication
+
+Ensure JWT authentication is properly configured.
+
+```
+var builder = WebApplication.CreateBuilder(args);
+
+var secretKey = "YourSuperSecretKeyHere"; // 🔑 Store securely
+string storagePath = @"C:\FileStorage";
+string connectionString = "Server=YOUR_SERVER;Database=YOUR_DB;User Id=YOUR_USER;Password=YOUR_PASSWORD;";
+
+// Register services
+builder.Services.AddSingleton(new FileManagerService(storagePath, connectionString, secretKey));
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.SaveToken = true;
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            RoleClaimType = ClaimTypes.Role // Ensure role claims are recognized
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+var app = builder.Build();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+app.Run();
+```
+
+### Test the Implementation
+
+🛠️ Generate JWT Token
+
+Admin User (Can Upload & Delete)
+
+```
+{
+  "username": "admin",
+  "password": "password"
+}
+```
+
+Regular User (Can Only Download)
+
+{
+  "username": "user",
+  "password": "password"
+}
+
+#### Restricted Endpoints
+
+POST /api/files/upload → Only Admin
+
+DELETE /api/files/delete/{fileId} → Only Admin
+
+GET /api/files/download/{fileId} → Admin & Users
+
+### 📌 Summary
+* ✅ Admins Can Upload & Delete Files 🔒
+* ✅ Regular Users Can Only Download 📥
+* ✅ JWT Tokens Now Include Roles 🔑
+
+## Add user registration with role selection
+
+### 📌 User Registration with Role Selection in ASP.NET Core Web API
+
+This implementation will:
+
+* ✔ Allow users to register with a role (Admin/User)
+* ✔ Store user credentials securely in a database
+* ✔ Validate login and issue JWT tokens with roles
+
+```
+CREATE TABLE Users (
+    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    Username NVARCHAR(50) UNIQUE NOT NULL,
+    PasswordHash NVARCHAR(255) NOT NULL,
+    Role NVARCHAR(10) NOT NULL CHECK (Role IN ('Admin', 'User'))
+);
+```
+
+### Modify AuthController.cs for Registration & Login
+
+Replace your existing AuthController.cs with the following:
+```
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using Dapper;
+using Microsoft.IdentityModel.Tokens;
+
+[Route("api/auth")]
+[ApiController]
+public class AuthController : ControllerBase
+{
+    private readonly string _connectionString = "Server=YOUR_SERVER;Database=YOUR_DB;User Id=YOUR_USER;Password=YOUR_PASSWORD;";
+    private readonly string _secretKey = "YourSuperSecretKeyHere"; // Store securely
+
+    // ✅ REGISTER NEW USER
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+            return BadRequest("Username and password are required.");
+
+        if (request.Role != "Admin" && request.Role != "User")
+            return BadRequest("Invalid role. Choose 'Admin' or 'User'.");
+
+        string passwordHash = HashPassword(request.Password);
+
+        using (IDbConnection db = new SqlConnection(_connectionString))
+        {
+            string sql = "INSERT INTO Users (Username, PasswordHash, Role) VALUES (@Username, @PasswordHash, @Role)";
+            try
+            {
+                await db.ExecuteAsync(sql, new { request.Username, PasswordHash = passwordHash, request.Role });
+                return Ok("User registered successfully.");
+            }
+            catch (SqlException ex) when (ex.Number == 2627) // Unique constraint violation
+            {
+                return Conflict("Username already exists.");
+            }
+        }
+    }
+
+    // ✅ LOGIN AND GET JWT TOKEN
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        using (IDbConnection db = new SqlConnection(_connectionString))
+        {
+            string sql = "SELECT PasswordHash, Role FROM Users WHERE Username = @Username";
+            var user = await db.QueryFirstOrDefaultAsync<User>(sql, new { request.Username });
+
+            if (user == null || !VerifyPassword(request.Password, user.PasswordHash))
+                return Unauthorized("Invalid username or password.");
+
+            var token = GenerateJwtToken(request.Username, user.Role);
+            return Ok(new { Token = token });
+        }
+    }
+
+    // 🔑 GENERATE JWT TOKEN WITH ROLE
+    private string GenerateJwtToken(string username, string role)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(_secretKey);
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(new[]
+            {
+                new Claim(ClaimTypes.Name, username),
+                new Claim(ClaimTypes.Role, role)
+            }),
+            Expires = DateTime.UtcNow.AddHours(1),
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+        };
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
+
+    // 🔐 HASH PASSWORD
+    private string HashPassword(string password)
+    {
+        using (SHA256 sha256 = SHA256.Create())
+        {
+            byte[] hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+            return Convert.ToBase64String(hashedBytes);
+        }
+    }
+
+    // 🔑 VERIFY PASSWORD
+    private bool VerifyPassword(string enteredPassword, string storedHash)
+    {
+        return HashPassword(enteredPassword) == storedHash;
+    }
+}
+
+// 📌 DATA MODELS
+public class RegisterRequest
+{
+    public string Username { get; set; }
+    public string Password { get; set; }
+    public string Role { get; set; } // "Admin" or "User"
+}
+
+public class LoginRequest
+{
+    public string Username { get; set; }
+    public string Password { get; set; }
+}
+
+public class User
+{
+    public string PasswordHash { get; set; }
+    public string Role { get; set; }
+}
+```
+
+### Update Program.cs to Support Authentication
+
+Modify Program.cs to ensure JWT role-based authentication works correctly.
+
+```
+var builder = WebApplication.CreateBuilder(args);
+
+var secretKey = "YourSuperSecretKeyHere"; // 🔑 Store securely
+string storagePath = @"C:\FileStorage";
+string connectionString = "Server=YOUR_SERVER;Database=YOUR_DB;User Id=YOUR_USER;Password=YOUR_PASSWORD;";
+
+// Register services
+builder.Services.AddSingleton(new FileManagerService(storagePath, connectionString, secretKey));
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.SaveToken = true;
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            RoleClaimType = ClaimTypes.Role // Ensure role claims are recognized
+        };
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("UserOrAdmin", policy => policy.RequireRole("User", "Admin"));
+});
+
+var app = builder.Build();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+app.Run();
+```
+
+## Test the Implementation
+
+### 🛠️ Register a New User
+
+Register an Admin User
+
+```
+{
+  "username": "admin1",
+  "password": "securepassword",
+  "role": "Admin"
+}
+```
+
+Register a Regular User
+
+```
+{
+  "username": "user1",
+  "password": "securepassword",
+  "role": "User"
+}
+```
+
+### Login to Get JWT Token
+
+Use the registered credentials in POST /api/auth/login to receive a JWT token.
+
+### Restrict API Endpoints by Role
+
+Update your FileController to use role-based policies:
+
+```
+[Authorize] // Require authentication for all endpoints
+[Route("api/files")]
+[ApiController]
+public class FileController : ControllerBase
+{
+    private readonly FileManagerService _fileManagerService;
+
+    public FileController(FileManagerService fileManagerService)
+    {
+        _fileManagerService = fileManagerService;
+    }
+
+    [Authorize(Policy = "AdminOnly")] // Only Admins can upload files
+    [HttpPost("upload")]
+    public async Task<IActionResult> UploadFile([FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("Invalid file.");
+
+        Guid fileId = await _fileManagerService.SaveFileAsync(file);
+        return Ok(new { FileId = fileId });
+    }
+
+    [Authorize(Policy = "UserOrAdmin")] // Both Users and Admins can download files
+    [HttpGet("download/{fileId}")]
+    public async Task<IActionResult> DownloadFile(Guid fileId)
+    {
+        var (originalFileName, fileBytes) = await _fileManagerService.GetFileAsync(fileId);
+
+        if (fileBytes == null)
+            return NotFound("File not found.");
+
+        return File(fileBytes, "application/octet-stream", originalFileName);
+    }
+
+    [Authorize(Policy = "AdminOnly")] // Only Admins can delete files
+    [HttpDelete("delete/{fileId}")]
+    public async Task<IActionResult> DeleteFile(Guid fileId)
+    {
+        bool deleted = await _fileManagerService.DeleteFileAsync(fileId);
+        if (!deleted)
+            return NotFound("File not found.");
+
+        return Ok("File deleted successfully.");
+    }
+}
+```
+
+## 📌 Summary
+* ✅ Users Can Register & Choose a Role 🎭
+* ✅ Admins Can Upload & Delete Files 🔒
+* ✅ Regular Users Can Only Download 📥
+* ✅ JWT Tokens Now Include Role-Based Authorization 🔑
