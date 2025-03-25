@@ -105,6 +105,15 @@ https://www.webopedia.com/definitions/special-character/
 * Unit Testing
 * **pdevito3 craftsman** (Wrapt)
 
+# Exception Handling
+
+## System.IO.PathTooLongException
+
+The specified path, file name, or both are too long. The fully qualified file name must be less than 260 characters, and the directory name must be less than 248 characters.
+
+* Use **AlphaFS** if you need **symbolic link support**, deeper file system operations, and are working only on Windows.
+* Use ZetaLongPaths if you need **cross-platform support**, a simpler API, and just need basic file handling with long paths.
+
 ## Boilerplate List
 * [Boilerplate List](https://boilerplatelist.com)
 * [Next Boiler Plate - Black Friday Sale Live](https://www.nextboilerplate.com/)
